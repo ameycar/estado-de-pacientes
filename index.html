@@ -4,27 +4,41 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Estado de Pacientes</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:20px; }
+    h1, h2 { text-align: center; }
+    form { max-width: 400px; margin: auto; padding: 1em; background: #f9f9f9; border-radius: 5px; }
+    form input, form button { width: 100%; padding: .5em; margin: .5em 0; }
+    ul { list-style: none; padding: 0; max-width: 600px; margin: 1em auto; }
+    ul li { background: #fff; margin: .5em 0; padding: .5em; border-radius: 4px; display: flex; justify-content: space-between; }
+    ul li button { margin-left: 1em; }
+  </style>
 </head>
 <body>
+
   <h1>Estado de Pacientes</h1>
 
   <form id="form-paciente">
-    <input id="sede" placeholder="Sede" required>
-    <input id="apellido" placeholder="Apellido" required>
-    <input id="nombre" placeholder="Nombre" required>
-    <input id="estudio" placeholder="Estudio" required>
+    <input id="sede"      placeholder="Sede"      required />
+    <input id="apellido"  placeholder="Apellido"  required />
+    <input id="nombre"    placeholder="Nombre"    required />
+    <input id="estudio"   placeholder="Estudio"   required />
     <button type="submit">Agregar Paciente</button>
   </form>
 
   <h2>Lista de Pacientes</h2>
   <ul id="pacientes"></ul>
 
-  <!-- Firebase v9 compat -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script type="module">
+    // 1) Importar módulos
+    import { initializeApp }       from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+    import { getDatabase,
+             ref,
+             onValue,
+             push,
+             update }             from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
 
-  <script>
-    // Configuración de Firebase
+    // 2) Configuración de tu Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
       authDomain: "app-ecografia.firebaseapp.com",
@@ -36,62 +50,61 @@
       measurementId: "G-ZB2XS0DFC8"
     };
 
-    // Inicializar Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    console.log('Firebase inicializado:', app.name);
-    const db = firebase.database();
-    console.log('DB ref ok?', !!db);
+    // 3) Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
 
-    // Referencias DOM
-    const form = document.getElementById('form-paciente');
-    const sedeInput = document.getElementById('sede');
-    const apellidoInput = document.getElementById('apellido');
-    const nombreInput = document.getElementById('nombre');
+    // 4) Referencias al DOM
+    const form         = document.getElementById('form-paciente');
+    const sedeInput    = document.getElementById('sede');
+    const apellidoInput= document.getElementById('apellido');
+    const nombreInput  = document.getElementById('nombre');
     const estudioInput = document.getElementById('estudio');
-    const pacientesList = document.getElementById('pacientes');
+    const lista        = document.getElementById('pacientes');
 
-    // Mostrar pacientes en tiempo real
-    function mostrarPacientes() {
-      const refPacientes = db.ref('pacientes');
-      refPacientes.on('value', snapshot => {
-        console.log('Recibiendo snapshot:', snapshot.exists(), snapshot.val());
-        pacientesList.innerHTML = '';
+    // 5) Añadir paciente
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const nuevo = {
+        sede:     sedeInput.value,
+        apellido: apellidoInput.value,
+        nombre:   nombreInput.value,
+        estudio:  estudioInput.value,
+        estado:   'Programado'
+      };
+      push(ref(db, 'pacientes'), nuevo);
+      form.reset();
+    });
+
+    // 6) Mostrar y actualizar en tiempo real
+    function renderPacientes() {
+      onValue(ref(db, 'pacientes'), snapshot => {
+        lista.innerHTML = '';                      // limpiar
         snapshot.forEach(child => {
           const p = child.val();
           const li = document.createElement('li');
           li.textContent = `${p.apellido}, ${p.nombre} — ${p.estudio} (${p.sede}) — Estado: ${p.estado}`;
+          
+          // Botón para cambiar estado
           const btn = document.createElement('button');
           btn.textContent = 'Cambiar Estado';
-          btn.onclick = () => actualizarEstado(child.key, p.estado);
+          btn.addEventListener('click', () => {
+            const siguiente = p.estado === 'Programado'
+              ? 'En espera'
+              : p.estado === 'En espera'
+              ? 'En atención'
+              : 'Atendido';
+            update(ref(db, 'pacientes/' + child.key), { estado: siguiente });
+          });
+
           li.appendChild(btn);
-          pacientesList.appendChild(li);
+          lista.appendChild(li);
         });
       });
     }
 
-    // Cambiar estado
-    function actualizarEstado(id, estadoActual) {
-      const nuevo = estadoActual === 'Programado' ? 'En espera'
-                  : estadoActual === 'En espera'   ? 'En atención'
-                  :                                   'Atendido';
-      db.ref('pacientes/' + id).update({ estado: nuevo });
-    }
-
-    // Agregar paciente
-    form.addEventListener('submit', e => {
-      e.preventDefault();
-      const paciente = {
-        sede: sedeInput.value,
-        apellido: apellidoInput.value,
-        nombre: nombreInput.value,
-        estudio: estudioInput.value,
-        estado: 'Programado'
-      };
-      db.ref('pacientes').push(paciente);
-      form.reset();
-    });
-
-    mostrarPacientes();
+    renderPacientes();
   </script>
+
 </body>
 </html>
