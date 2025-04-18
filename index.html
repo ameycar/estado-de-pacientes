@@ -10,8 +10,8 @@
     form { max-width: 400px; margin: auto; padding: 1em; background: #f9f9f9; border-radius: 5px; }
     form input, form button { width: 100%; padding: .5em; margin: .5em 0; }
     ul { list-style: none; padding: 0; max-width: 600px; margin: 1em auto; }
-    ul li { background: #fff; margin: .5em 0; padding: .5em; border-radius: 4px; display: flex; justify-content: space-between; }
-    ul li button { margin-left: 1em; }
+    ul li { background: #fff; margin: .5em 0; padding: .5em; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; }
+    ul li select { margin-left: 1em; }
   </style>
 </head>
 <body>
@@ -30,15 +30,10 @@
   <ul id="pacientes"></ul>
 
   <script type="module">
-    // 1) Importar módulos
-    import { initializeApp }       from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-    import { getDatabase,
-             ref,
-             onValue,
-             push,
-             update }             from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+    import { getDatabase, ref, onValue, push, update } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
 
-    // 2) Configuración de tu Firebase
+    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
       authDomain: "app-ecografia.firebaseapp.com",
@@ -50,11 +45,11 @@
       measurementId: "G-ZB2XS0DFC8"
     };
 
-    // 3) Inicializar Firebase
+    // Inicializar Firebase
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
 
-    // 4) Referencias al DOM
+    // Referencias al DOM
     const form         = document.getElementById('form-paciente');
     const sedeInput    = document.getElementById('sede');
     const apellidoInput= document.getElementById('apellido');
@@ -62,7 +57,10 @@
     const estudioInput = document.getElementById('estudio');
     const lista        = document.getElementById('pacientes');
 
-    // 5) Añadir paciente
+    // Estados disponibles
+    const ESTADOS = ['Programado','En espera','En atención','Atendido'];
+
+    // 1) Añadir paciente con 'En espera' por defecto
     form.addEventListener('submit', e => {
       e.preventDefault();
       const nuevo = {
@@ -70,34 +68,38 @@
         apellido: apellidoInput.value,
         nombre:   nombreInput.value,
         estudio:  estudioInput.value,
-        estado:   'Programado'
+        estado:   'En espera'
       };
       push(ref(db, 'pacientes'), nuevo);
       form.reset();
     });
 
-    // 6) Mostrar y actualizar en tiempo real
+    // 2) Mostrar y actualizar en tiempo real
     function renderPacientes() {
       onValue(ref(db, 'pacientes'), snapshot => {
-        lista.innerHTML = '';                      // limpiar
+        lista.innerHTML = '';
         snapshot.forEach(child => {
           const p = child.val();
           const li = document.createElement('li');
-          li.textContent = `${p.apellido}, ${p.nombre} — ${p.estudio} (${p.sede}) — Estado: ${p.estado}`;
-          
-          // Botón para cambiar estado
-          const btn = document.createElement('button');
-          btn.textContent = 'Cambiar Estado';
-          btn.addEventListener('click', () => {
-            const siguiente = p.estado === 'Programado'
-              ? 'En espera'
-              : p.estado === 'En espera'
-              ? 'En atención'
-              : 'Atendido';
-            update(ref(db, 'pacientes/' + child.key), { estado: siguiente });
+          // Texto con datos del paciente
+          li.textContent = `${p.apellido}, ${p.nombre} — ${p.estudio} (${p.sede})`;
+
+          // Select para elegir estado
+          const sel = document.createElement('select');
+          ESTADOS.forEach(estado => {
+            const opt = document.createElement('option');
+            opt.value = estado;
+            opt.text = estado;
+            if (estado === p.estado) opt.selected = true;
+            sel.appendChild(opt);
           });
 
-          li.appendChild(btn);
+          // Al cambiar el select, actualizamos Firebase
+          sel.addEventListener('change', () => {
+            update(ref(db, 'pacientes/' + child.key), { estado: sel.value });
+          });
+
+          li.appendChild(sel);
           lista.appendChild(li);
         });
       });
