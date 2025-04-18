@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resumen de Pacientes</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    h1 { text-align: center; }
+    .estadistica { max-width: 400px; margin: 1em auto; background: #f9f9f9; padding: 1em; border-radius: 5px; }
+    .estadistica div { margin: .5em 0; font-size: 1.1em; }
+  </style>
+</head>
+<body>
+
+  <h1>Resumen de Pacientes</h1>
+  <div class="estadistica">
+    <div>Total de pacientes: <span id="total">0</span></div>
+    <div>Programado: <span id="programado">0</span></div>
+    <div>En espera: <span id="en-espera">0</span></div>
+    <div>En atención: <span id="en-atencion">0</span></div>
+    <div>Atendido: <span id="atendido">0</span></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+    import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
+
+    // Tu configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
+      authDomain: "app-ecografia.firebaseapp.com",
+      databaseURL: "https://app-ecografia-default-rtdb.firebaseio.com",
+      projectId: "app-ecografia",
+      storageBucket: "app-ecografia.firebasestorage.app",
+      messagingSenderId: "241799347066",
+      appId: "1:241799347066:web:b10b3c963ec9c88f1d34c3",
+      measurementId: "G-ZB2XS0DFC8"
+    };
+
+    // Inicializa Firebase y la DB
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    // Referencias a los spans de la página
+    const totalEl      = document.getElementById('total');
+    const programadoEl = document.getElementById('programado');
+    const esperaEl     = document.getElementById('en-espera');
+    const atencionEl   = document.getElementById('en-atencion');
+    const atendidoEl   = document.getElementById('atendido');
+
+    // Escucha los datos en tiempo real
+    onValue(ref(db, 'pacientes'), snapshot => {
+      const counts = { Programado: 0, 'En espera': 0, 'En atención': 0, Atendido: 0 };
+      let total = 0;
+
+      snapshot.forEach(child => {
+        const estado = child.val().estado;
+        if (counts.hasOwnProperty(estado)) {
+          counts[estado]++;
+          total++;
+        }
+      });
+
+      // Actualiza la UI
+      totalEl.textContent      = total;
+      programadoEl.textContent = counts.Programado;
+      esperaEl.textContent     = counts['En espera'];
+      atencionEl.textContent   = counts['En atención'];
+      atendidoEl.textContent   = counts.Atendido;
+    });
+  </script>
+
+</body>
+</html>
