@@ -31,7 +31,7 @@ form.addEventListener('submit', function (e) {
     apellido: apellidoInput.value,
     nombre: nombreInput.value,
     estudio: estudioInput.value,
-    estado: 'Programado'
+    estado: 'Programado' // Estado inicial
   };
 
   // Guardar en Firebase
@@ -51,9 +51,27 @@ function mostrarPacientes() {
   pacientesRef.on('child_added', function (snapshot) {
     const paciente = snapshot.val();
     const li = document.createElement('li');
-    li.textContent = `${paciente.apellido}, ${paciente.nombre} - ${paciente.estudio} (${paciente.sede})`;
+    li.textContent = `${paciente.apellido}, ${paciente.nombre} - ${paciente.estudio} (${paciente.sede}) - Estado: ${paciente.estado}`;
+    
+    // Botón para actualizar estado
+    const button = document.createElement('button');
+    button.textContent = 'Cambiar Estado';
+    button.onclick = function() {
+      actualizarEstado(snapshot.key, paciente.estado);
+    };
+
+    li.appendChild(button);
     pacientesList.appendChild(li);
   });
+}
+
+// Función para cambiar el estado
+function actualizarEstado(id, estadoActual) {
+  const pacientesRef = db.ref('pacientes/' + id);
+  const nuevoEstado = estadoActual === 'Programado' ? 'En espera' :
+                      estadoActual === 'En espera' ? 'En atención' : 'Atendido';
+
+  pacientesRef.update({ estado: nuevoEstado });
 }
 
 // Llamar a la función de mostrar pacientes
