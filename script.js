@@ -10,58 +10,115 @@ const firebaseConfig = {
     measurementId: "G-ZB2XS0DFC8"
 };
 
-// Inicializar Firebase
+// Inicialización de Firebase
 const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db = firebase.database(app);
+const patientsRef = db.ref("patients");
 
-// Referencias a elementos del formulario y la lista
-const sedeInput = document.getElementById("sede");
-const apellidoInput = document.getElementById("apellido");
-const nombreInput = document.getElementById("nombre");
-const estudioInput = document.getElementById("estudio");
-const pacientesList = document.getElementById("pacientes");
-const form = document.getElementById("form-paciente");
+// Referencias a elementos del DOM
+const patientsList = document.getElementById('patientsList');
+const addPatientForm = document.getElementById('addPatientForm');
+const firstNameInput = document.getElementById('firstName');
+const lastNameInput = document.getElementById('lastName');
+const studyInput = document.getElementById('study');
+const dateFilterInput = document.getElementById('dateFilter');
+const countEnEspera = document.getElementById('countEnEspera');
 
-// Función para mostrar la lista de pacientes en tiempo real
-function mostrarPacientes() {
-    const pacientesRef = db.ref('pacientes');
-    pacientesRef.on('value', function (snapshot) {
-        pacientesList.innerHTML = ''; // Limpiar la lista actual
+// Agregar paciente a la base de datos
+addPatientForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const firstName = firstNameInput.value.trim();
+    const lastName = lastNameInput.value.trim();
+    const study = studyInput.value;
 
-        snapshot.forEach(function (childSnapshot) {
-            const paciente = childSnapshot.val();
-            const li = document.createElement('li');
-            li.textContent = `${paciente.apellido}, ${paciente.nombre} - ${paciente.estudio} (${paciente.sede}) - Estado: ${paciente.estado}`;
-            
-            // Botón para actualizar estado
-            const button = document.createElement('button');
-            button.textContent = 'Cambiar Estado';
-            button.onclick = function() {
-                actualizarEstado(childSnapshot.key, paciente.estado);
-            };
+    const newPatient = {
+        firstName: firstName,
+        lastName: lastName,
+        study: study,
+        status: "En espera",
+        date: new Date().toISOString().split("T")[0]
+    };
 
-            li.appendChild(button);
-            pacientesList.appendChild(li);
+    patientsRef.push(newPatient);
+
+    // Limpiar formulario
+    firstNameInput.value = '';
+    lastNameInput.value = '';
+    studyInput.value = 'Ecografía';
+});
+
+// Escuchar cambios en la base de datos y actualizar la lista de pacientes
+patientsRef.on('child_added', (data) => {
+    const patient = data.val();
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td>${patient.firstName}</td>
+        <td>${patient.lastName}</td>
+        <td id="status_${data.key}">${patient.status}</td>
+        <td>${patient.study}</td>
+        <td>${patient.date}</td>
+        <td><button onclick="changeStatus('${data.key}', '${patient.status}')">Cambiar Estado</button></td>
+    `;
+    patientsList.appendChild(tr);
+
+    // Actualizar contador de pacientes en espera
+    if (patient.status === "En espera") {
+        updateCountEnEspera();
+    }
+});
+
+// Cambiar el estado del paciente
+function changeStatus(patientId, currentStatus) {
+    const statusRef = db.ref("patients/" + patientId + "/status");
+
+    let newStatus = '';
+    if (currentStatus === 'En espera') {
+        newStatus = 'En atención';
+    } else if (currentStatus === 'En atención') {
+        newStatus = 'Atendido';
+    } else if (currentStatus === 'Atendido') {
+        newStatus = 'Programado';
+    } else {
+        newStatus = 'En espera';
+    }
+
+    if (confirm(`¿Deseas cambiar el estado del paciente a ${newStatus}?`)) {
+        statusRef.set(newStatus);
+    }
+}
+
+// Filtrar pacientes por fecha
+dateFilterInput.addEventListener('input', (e) => {
+    const filterDate = e.target.value;
+    patientsList.innerHTML = '';
+
+    patientsRef.orderByChild("date").equalTo(filterDate).on('child_added', (data) => {
+        const patient = data.val();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${patient.firstName}</td>
+            <td>${patient.lastName}</td>
+            <td>${patient.status}</td>
+            <td>${patient.study}</td>
+            <td>${patient.date}</td>
+            <td><button onclick="changeStatus('${data.key}', '${patient.status}')">Cambiar Estado</button></td>
+        `;
+        patientsList.appendChild(tr);
+    });
+});
+
+// Actualizar contador de pacientes en espera
+function updateCountEnEspera() {
+    let count = 0;
+    patientsRef.once('value', (snapshot) => {
+        snapshot.forEach((childSnapshot) => {
+            if (childSnapshot.val().status === "En espera") {
+                count++;
+            }
         });
+        countEnEspera.textContent = count;
     });
 }
 
-// Función para actualizar el estado de un paciente
-function actualizarEstado(id, estadoActual) {
-    const pacientesRef = db.ref('pacientes/' + id);
-    const nuevoEstado = estadoActual === 'Programado' ? 'En espera' :
-                        estadoActual === 'En espera' ? 'En atención' : 'Atendido';
-
-    // Actualizar el estado en Firebase
-    pacientesRef.update({ estado: nuevoEstado });
-}
-
-// Agregar un paciente a Firebase
-form.addEventListener('submit', function (e) {
-    e.preventDefault();
-
-    const paciente = {
-        sede: sedeInput.value,
-        apellido: apellidoInput.value,
-        nombre: nombreInput.value,
-        estudio: estudioInput.value,
+// Cargar el contador de pacientes en espera al iniciar
+updateCountEnEspera();
