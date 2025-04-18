@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Estado de Pacientes</title>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
   <h1>Estado de Pacientes</h1>
@@ -33,62 +31,23 @@
       <option value="Tiroides">Tiroides</option>
     </select><br>
 
-    <label>Estado:</label>
-    <select id="estado" required>
-      <option value="En espera">En espera</option>
-      <option value="En atención">En atención</option>
-      <option value="Atendido">Atendido</option>
-      <option value="Programado">Programado</option>
-    </select><br>
-
     <button type="submit">Agregar Paciente</button>
   </form>
 
-  <script>
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Importación modular
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
       authDomain: "app-ecografia.firebaseapp.com",
       databaseURL: "https://app-ecografia-default-rtdb.firebaseio.com",
       projectId: "app-ecografia",
-      storageBucket: "app-ecografia.firebasestorage.app",
+      storageBucket: "app-ecografia.appspot.com",
       messagingSenderId: "241799347066",
-      appId: "1:241799347066:web:b10b3c963ec9c88f1d34c3",
-      measurementId: "G-ZB2XS0DFC8"
+      appId: "1:241799347066:web:b10b3c963ec9c88f1d34c3"
     };
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database(app);
-    const ref = db.ref("pacientes");
-
-    ref.on("value", (snapshot) => {
-      const data = snapshot.val();
-      const pacientes = data ? Object.entries(data).map(([id, obj]) => ({ id, ...obj })) : [];
-
-      // Ordenar por estado
-      const orden = { "En espera": 1, "En atención": 2, "Atendido": 3, "Programado": 4 };
-      pacientes.sort((a, b) => orden[a.estado] - orden[b.estado]);
-
-      const lista = document.getElementById("pacientes");
-      lista.innerHTML = "";
-
-      pacientes.forEach(p => {
-        const li = document.createElement("li");
-        li.textContent = `${p.nombre} ${p.apellido} - ${p.estudio} - ${p.estado}`;
-        lista.appendChild(li);
-      });
-    });
-
-    document.getElementById("formularioPaciente").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const nombre = document.getElementById("nombre").value;
-      const apellido = document.getElementById("apellido").value;
-      const estudio = document.getElementById("estudio").value;
-      const estado = document.getElementById("estado").value;
-
-      const nuevoPaciente = { nombre, apellido, estudio, estado };
-      ref.push(nuevoPaciente);
-      e.target.reset();
-    });
-  </script>
-</body>
-</html>
+    const app = initializeApp
