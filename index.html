@@ -1,107 +1,94 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estado de Pacientes</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Estado de Pacientes</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
+  <h1>Estado de Pacientes</h1>
 
-    <h1>Estado de Pacientes</h1>
+  <h2>Lista de Pacientes</h2>
+  <ul id="pacientes"></ul>
 
-    <h2>Lista de Pacientes</h2>
-    <ul id="pacientes"></ul>
+  <h3>Agregar Paciente</h3>
+  <form id="formularioPaciente">
+    <label>Nombre:</label>
+    <input type="text" id="nombre" required><br>
 
-    <h3>Agregar Paciente</h3>
-    <form id="formularioPaciente">
-        <label for="nombre">Nombre:</label>
-        <input type="text" id="nombre" required>
-        <br>
-        <label for="apellido">Apellido:</label>
-        <input type="text" id="apellido" required>
-        <br>
-        <label for="estado">Estado:</label>
-        <select id="estado" required>
-            <option value="En espera">En espera</option>
-            <option value="En atención">En atención</option>
-            <option value="Atendido">Atendido</option>
-            <option value="Programado">Programado</option>
-        </select>
-        <br>
-        <button type="submit">Agregar Paciente</button>
-    </form>
+    <label>Apellido:</label>
+    <input type="text" id="apellido" required><br>
 
-    <script>
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
-            authDomain: "app-ecografia.firebaseapp.com",
-            databaseURL: "https://app-ecografia-default-rtdb.firebaseio.com",
-            projectId: "app-ecografia",
-            storageBucket: "app-ecografia.firebasestorage.app",
-            messagingSenderId: "241799347066",
-            appId: "1:241799347066:web:b10b3c963ec9c88f1d34c3",
-            measurementId: "G-ZB2XS0DFC8"
-        };
+    <label>Estudio:</label>
+    <select id="estudio" required>
+      <option value="">Seleccione un estudio</option>
+      <option value="Abdomen Total">Abdomen Total</option>
+      <option value="Obstétrica">Obstétrica</option>
+      <option value="Transvaginal">Transvaginal</option>
+      <option value="Partes Blandas">Partes Blandas</option>
+      <option value="Renal">Renal</option>
+      <option value="Hepatobiliar">Hepatobiliar</option>
+      <option value="Tiroides">Tiroides</option>
+    </select><br>
 
-        // Inicializar Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database(app);
-        const ref = database.ref("pacientes");
+    <label>Estado:</label>
+    <select id="estado" required>
+      <option value="En espera">En espera</option>
+      <option value="En atención">En atención</option>
+      <option value="Atendido">Atendido</option>
+      <option value="Programado">Programado</option>
+    </select><br>
 
-        // Mostrar pacientes
-        ref.on("value", (snapshot) => {
-            const data = snapshot.val();
-            const pacientes = data ? Object.values(data) : [];
+    <button type="submit">Agregar Paciente</button>
+  </form>
 
-            // Ordenar pacientes por estado
-            pacientes.sort((a, b) => {
-                const orden = {
-                    "En espera": 1,
-                    "En atención": 2,
-                    "Atendido": 3,
-                    "Programado": 4
-                };
-                return orden[a.estado] - orden[b.estado];
-            });
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
+      authDomain: "app-ecografia.firebaseapp.com",
+      databaseURL: "https://app-ecografia-default-rtdb.firebaseio.com",
+      projectId: "app-ecografia",
+      storageBucket: "app-ecografia.firebasestorage.app",
+      messagingSenderId: "241799347066",
+      appId: "1:241799347066:web:b10b3c963ec9c88f1d34c3",
+      measurementId: "G-ZB2XS0DFC8"
+    };
 
-            // Mostrar pacientes en la lista
-            let listaPacientes = document.getElementById("pacientes");
-            listaPacientes.innerHTML = "";
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database(app);
+    const ref = db.ref("pacientes");
 
-            pacientes.forEach(paciente => {
-                const li = document.createElement("li");
-                li.textContent = `${paciente.nombre} ${paciente.apellido} - Estado: ${paciente.estado}`;
-                listaPacientes.appendChild(li);
-            });
-        });
+    ref.on("value", (snapshot) => {
+      const data = snapshot.val();
+      const pacientes = data ? Object.entries(data).map(([id, obj]) => ({ id, ...obj })) : [];
 
-        // Agregar nuevo paciente
-        document.getElementById("formularioPaciente").addEventListener("submit", function(event) {
-            event.preventDefault();
+      // Ordenar por estado
+      const orden = { "En espera": 1, "En atención": 2, "Atendido": 3, "Programado": 4 };
+      pacientes.sort((a, b) => orden[a.estado] - orden[b.estado]);
 
-            const nombre = document.getElementById("nombre").value;
-            const apellido = document.getElementById("apellido").value;
-            const estado = document.getElementById("estado").value;
+      const lista = document.getElementById("pacientes");
+      lista.innerHTML = "";
 
-            const nuevoPaciente = {
-                nombre: nombre,
-                apellido: apellido,
-                estado: estado
-            };
+      pacientes.forEach(p => {
+        const li = document.createElement("li");
+        li.textContent = `${p.nombre} ${p.apellido} - ${p.estudio} - ${p.estado}`;
+        lista.appendChild(li);
+      });
+    });
 
-            // Guardar en la base de datos
-            ref.push(nuevoPaciente).then(() => {
-                alert("Paciente agregado");
-                // Limpiar formulario
-                document.getElementById("formularioPaciente").reset();
-            });
-        });
-    </script>
+    document.getElementById("formularioPaciente").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById("nombre").value;
+      const apellido = document.getElementById("apellido").value;
+      const estudio = document.getElementById("estudio").value;
+      const estado = document.getElementById("estado").value;
 
+      const nuevoPaciente = { nombre, apellido, estudio, estado };
+      ref.push(nuevoPaciente);
+      e.target.reset();
+    });
+  </script>
 </body>
 </html>
