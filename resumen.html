@@ -5,22 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Resumen de Pacientes</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    .paciente { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-left: 5px solid; }
-    .estado-En\ espera { border-color: red; }
-    .estado-En\ atención { border-color: orange; }
-    .estado-Atendido { border-color: green; }
-    .estado-Programado { border-color: blue; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f1f1f1;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .paciente {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    .barra-estado {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 8px;
+      height: 100%;
+    }
+    .estado-programado { background: #007bff; }
+    .estado-espera { background: #dc3545; }
+    .estado-en-atencion { background: #fd7e14; }
+    .estado-atendido { background: #28a745; }
+
+    .info {
+      margin-left: 15px;
+    }
+
+    .paciente strong {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    .paciente small {
+      color: #666;
+    }
   </style>
 </head>
 <body>
-  <h2>Resumen de Pacientes</h2>
+  <h1>Resumen de Pacientes</h1>
   <div id="lista-pacientes"></div>
 
-  <!-- Firebase -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
@@ -37,27 +73,38 @@
     const db = getDatabase(app);
     const pacientesRef = ref(db, 'pacientes');
 
-    const lista = document.getElementById('lista-pacientes');
+    const listaPacientes = document.getElementById("lista-pacientes");
 
-    onValue(pacientesRef, snapshot => {
-      lista.innerHTML = '';
+    onValue(pacientesRef, (snapshot) => {
       const data = snapshot.val();
-      if (!data) {
-        lista.innerHTML = '<p>No hay pacientes.</p>';
-        return;
+      listaPacientes.innerHTML = "";
+      if (data) {
+        const pacientesArray = Object.entries(data);
+        pacientesArray
+          .sort((a, b) => {
+            const estadoOrden = {
+              "En espera": 1,
+              "En atención": 2,
+              "Programado": 3,
+              "Atendido": 4,
+            };
+            return estadoOrden[a[1].estado] - estadoOrden[b[1].estado];
+          })
+          .forEach(([id, paciente]) => {
+            const div = document.createElement("div");
+            div.className = `paciente`;
+            div.innerHTML = `
+              <div class="barra-estado ${getEstadoClase(paciente.estado)}"></div>
+              <div class="info">
+                <strong>${paciente.nombres} ${paciente.apellidos}</strong>
+                <small><b>Sede:</b> ${paciente.sede} | <b>Estudio:</b> ${paciente.estudio}</small>
+              </div>
+            `;
+            listaPacientes.appendChild(div);
+          });
       }
-      const pacientesArray = Object.entries(data).map(([id, val]) => ({ id, ...val }));
-      pacientesArray.sort((a, b) => b.timestamp - a.timestamp);
-      pacientesArray.forEach(p => {
-        const div = document.createElement('div');
-        div.className = `paciente estado-${p.estado.replace(/\s/g, '\\ ')}`;
-        div.innerHTML = `
-          <strong>${p.estado}</strong><br>
-          <strong>${p.nombres} ${p.apellidos}</strong> - ${p.estudio} - <em>${p.sede}</em>
-        `;
-        lista.appendChild(div);
-      });
     });
-  </script>
-</body>
-</html>
+
+    function getEstadoClase(estado) {
+      switch (estado) {
+        case
