@@ -87,8 +87,13 @@
       };
 
       // Insertamos los datos en Firebase
-      firebase.database().ref('pacientes').push(nuevo);
-      form.reset();
+      firebase.database().ref('pacientes').push(nuevo)
+        .then(() => {
+          form.reset(); // Limpiamos el formulario después de agregar
+        })
+        .catch(error => {
+          console.error("Error al agregar paciente: ", error);
+        });
     });
 
     // Obtener los pacientes desde Firebase y mostrarlos
@@ -101,14 +106,20 @@
         pacientes.push({ ...p, key: child.key });
       });
 
-      // Primero filtramos los que están "En espera" y luego los demás
-      const pacientesEnEspera = pacientes.filter(p => p.estado === 'En espera');
-      const otrosPacientes = pacientes.filter(p => p.estado !== 'En espera');
+      // Verificamos si hay pacientes en la base de datos
+      if (pacientes.length === 0) {
+        lista.innerHTML = "<li>No hay pacientes registrados.</li>";
+        return;
+      }
 
-      // Combinamos las listas, primero "En espera" y luego los demás
-      const listaOrdenada = [...pacientesEnEspera, ...otrosPacientes];
+      // Ordenamos los pacientes: Primero los que están "En espera", luego los demás
+      const pacientesOrdenados = pacientes.sort((a, b) => {
+        if (a.estado === 'En espera' && b.estado !== 'En espera') return -1;
+        if (a.estado !== 'En espera' && b.estado === 'En espera') return 1;
+        return a.timestamp - b.timestamp; // Orden cronológico por timestamp
+      });
 
-      listaOrdenada.forEach(p => {
+      pacientesOrdenados.forEach(p => {
         const li = document.createElement('li');
         const btn = document.createElement('button');
         btn.textContent = p.estado;
