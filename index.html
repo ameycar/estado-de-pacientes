@@ -98,8 +98,6 @@
 
     // Obtener los pacientes desde Firebase y mostrarlos
     firebase.database().ref('pacientes').on('value', snapshot => {
-      console.log('Datos obtenidos de Firebase:', snapshot.val()); // Depuración
-
       lista.innerHTML = ''; // Limpiar la lista antes de agregar nuevos datos
       const pacientes = [];
 
