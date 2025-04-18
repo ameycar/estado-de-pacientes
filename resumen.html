@@ -5,81 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Resumen de Pacientes</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
-    h1, h2 { margin: 20px; }
-    .estado { margin: 10px; padding: 10px; border-radius: 5px; color: white; }
-    .programado { background: #007bff; }
-    .espera { background: #dc3545; }
-    .atencion { background: #fd7e14; }
-    .atendido { background: #28a745; }
+    body { font-family: Arial; padding: 20px; }
+    .paciente { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-left: 5px solid; }
+    .estado-En\ espera { border-color: red; }
+    .estado-En\ atención { border-color: orange; }
+    .estado-Atendido { border-color: green; }
+    .estado-Programado { border-color: blue; }
   </style>
 </head>
 <body>
-  <h1>Resumen de Pacientes</h1>
-  <h2>Pacientes por Estado</h2>
+  <h2>Resumen de Pacientes</h2>
+  <div id="lista-pacientes"></div>
 
-  <div id="programado" class="estado programado">
-    <h3>Programados</h3>
-    <p id="count-programado">0</p>
-  </div>
-
-  <div id="espera" class="estado espera">
-    <h3>En Espera</h3>
-    <p id="count-espera">0</p>
-  </div>
-
-  <div id="atencion" class="estado atencion">
-    <h3>En Atención</h3>
-    <p id="count-atencion">0</p>
-  </div>
-
-  <div id="atendido" class="estado atendido">
-    <h3>Atendidos</h3>
-    <p id="count-atendido">0</p>
-  </div>
-
+  <!-- Firebase -->
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-    import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
       authDomain: "app-ecografia.firebaseapp.com",
       databaseURL: "https://app-ecografia-default-rtdb.firebaseio.com",
       projectId: "app-ecografia",
-      storageBucket: "app-ecografia.firebasestorage.app",
+      storageBucket: "app-ecografia.appspot.com",
       messagingSenderId: "241799347066",
       appId: "1:241799347066:web:b10b3c963ec9c88f1d34c3",
       measurementId: "G-ZB2XS0DFC8"
     };
 
     const app = initializeApp(firebaseConfig);
-    const db  = getDatabase(app);
+    const db = getDatabase(app);
+    const pacientesRef = ref(db, 'pacientes');
 
-    const stateCount = {
-      Programado: 0,
-      'En espera': 0,
-      'En atención': 0,
-      Atendido: 0
-    };
+    const lista = document.getElementById('lista-pacientes');
 
-    const countElements = {
-      Programado: document.getElementById('count-programado'),
-      'En espera': document.getElementById('count-espera'),
-      'En atención': document.getElementById('count-atencion'),
-      Atendido: document.getElementById('count-atendido')
-    };
-
-    onValue(ref(db, 'pacientes'), snapshot => {
-      snapshot.forEach(child => {
-        const p = child.val();
-        stateCount[p.estado]++;
-      });
-
-      // Actualiza los contadores en el DOM
-      for (const state in stateCount) {
-        countElements[state].textContent = stateCount[state];
+    onValue(pacientesRef, snapshot => {
+      lista.innerHTML = '';
+      const data = snapshot.val();
+      if (!data) {
+        lista.innerHTML = '<p>No hay pacientes.</p>';
+        return;
       }
+      const pacientesArray = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+      pacientesArray.sort((a, b) => b.timestamp - a.timestamp);
+      pacientesArray.forEach(p => {
+        const div = document.createElement('div');
+        div.className = `paciente estado-${p.estado.replace(/\s/g, '\\ ')}`;
+        div.innerHTML = `
+          <strong>${p.estado}</strong><br>
+          <strong>${p.nombres} ${p.apellidos}</strong> - ${p.estudio} - <em>${p.sede}</em>
+        `;
+        lista.appendChild(div);
+      });
     });
   </script>
 </body>
