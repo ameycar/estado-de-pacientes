@@ -1,151 +1,58 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Estado de Pacientes</title>
-  <style>
-    body { font-family: Arial; padding: 20px; }
-    .paciente {
-      margin: 10px 0; padding: 10px; border: 1px solid #ccc;
-      border-left: 5px solid; position: relative;
-    }
-    .estado-en-espera { border-color: red; }
-    .estado-en-atencion { border-color: yellow; }
-    .estado-atendido { border-color: green; }
-    .estado-programado { border-color: blue; }
-
-    .cambiar-estado-btn {
-      padding: 5px 10px; cursor: pointer; margin-right: 10px;
-    }
-
-    .estado-dropdown {
-      display: none; position: absolute; z-index: 10;
-      background-color: white; border: 1px solid #ccc;
-      padding: 5px; margin-top: 5px; left: 0;
-    }
-
-    .estado-dropdown button {
-      display: block; width: 100%;
-      padding: 5px 10px; border: none; cursor: pointer;
-      text-align: left;
-    }
-
-    .estado-dropdown button:hover {
-      background-color: #f0f0f0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado de Pacientes</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Estado de Pacientes</h1>
-  <form id="form">
-    <input type="text" placeholder="Sede" id="sede" required>
-    <input type="text" placeholder="Apellidos" id="apellidos" required>
-    <input type="text" placeholder="Nombres" id="nombres" required>
-    <select id="estudio" required>
-      <option value="">Seleccionar Estudio</option>
-      <option>Ecografía abdominal</option>
-      <option>Ecografía pélvica</option>
-      <option>Ecografía obstétrica</option>
-      <option>Ecografía renal</option>
-    </select>
-    <button type="submit">Agregar Paciente</button>
-  </form>
+    <h1>Estado de Pacientes</h1>
+    
+    <!-- Filtro de fecha -->
+    <div>
+        <label for="dateFilter">Filtrar por fecha:</label>
+        <input type="date" id="dateFilter">
+    </div>
 
-  <h2>Lista de Pacientes</h2>
-  <div id="lista"></div>
+    <!-- Contador de pacientes en espera -->
+    <div id="contadorEnEspera">
+        <h3>Pacientes en espera: <span id="countEnEspera">0</span></h3>
+    </div>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
-      authDomain: "app-ecografia.firebaseapp.com",
-      databaseURL: "https://app-ecografia-default-rtdb.firebaseio.com",
-      projectId: "app-ecografia",
-      storageBucket: "app-ecografia.appspot.com",
-      messagingSenderId: "241799347066",
-      appId: "1:241799347066:web:b10b3c963ec9c88f1d34c3",
-      measurementId: "G-ZB2XS0DFC8"
-    };
+    <div>
+        <h2>Lista de Pacientes</h2>
+        <table id="patientsTable">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Estado</th>
+                    <th>Estudio</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="patientsList"></tbody>
+        </table>
+    </div>
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    <div>
+        <h2>Agregar Paciente</h2>
+        <form id="addPatientForm">
+            <input type="text" id="firstName" placeholder="Nombre" required>
+            <input type="text" id="lastName" placeholder="Apellido" required>
+            <select id="study" required>
+                <option value="Ecografía">Ecografía</option>
+                <option value="Radiografía">Radiografía</option>
+                <option value="Tomografía">Tomografía</option>
+            </select>
+            <button type="submit">Agregar Paciente</button>
+        </form>
+    </div>
 
-    const form = document.getElementById("form");
-    const lista = document.getElementById("lista");
-
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const sede = form.sede.value;
-      const apellidos = form.apellidos.value;
-      const nombres = form.nombres.value;
-      const estudio = form.estudio.value;
-
-      const nuevoPaciente = {
-        sede,
-        apellidos,
-        nombres,
-        estudio,
-        estado: "En espera",
-        fecha: new Date().toISOString()
-      };
-
-      db.ref("pacientes").push(nuevoPaciente);
-      form.reset();
-    });
-
-    db.ref("pacientes").on("value", (snapshot) => {
-      lista.innerHTML = "";
-      const pacientes = [];
-      snapshot.forEach(child => {
-        pacientes.push({ id: child.key, ...child.val() });
-      });
-
-      // Ordenar para mostrar primero los "En espera"
-      pacientes.sort((a, b) => {
-        const ordenEstado = {
-          "En espera": 1,
-          "En atención": 2,
-          "Programado": 3,
-          "Atendido": 4
-        };
-        return ordenEstado[a.estado] - ordenEstado[b.estado];
-      });
-
-      pacientes.forEach(p => {
-        const claseEstado = `estado-${p.estado.toLowerCase().replace(/\s/g, '-')}`;
-        const div = document.createElement("div");
-        div.className = `paciente ${claseEstado}`;
-        div.innerHTML = `
-          <strong>${p.nombres} ${p.apellidos}</strong>
-          <div class="estado-actual">[${p.estado}]</div>
-          <button class="cambiar-estado-btn">Cambiar estado</button>
-          <div class="estado-dropdown">
-            <button onclick="cambiarEstado('${p.id}', 'En espera', '${p.nombres} ${p.apellidos}')">En espera</button>
-            <button onclick="cambiarEstado('${p.id}', 'En atención', '${p.nombres} ${p.apellidos}')">En atención</button>
-            <button onclick="cambiarEstado('${p.id}', 'Programado', '${p.nombres} ${p.apellidos}')">Programado</button>
-            <button onclick="cambiarEstado('${p.id}', 'Atendido', '${p.nombres} ${p.apellidos}')">Atendido</button>
-          </div>
-          <div><em>${p.estudio}</em> - <em>${p.sede}</em></div>
-        `;
-
-        const btn = div.querySelector(".cambiar-estado-btn");
-        const dropdown = div.querySelector(".estado-dropdown");
-        btn.addEventListener("click", () => {
-          dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-        });
-
-        lista.appendChild(div);
-      });
-    });
-
-    function cambiarEstado(id, nuevoEstado, nombre) {
-      const confirmar = confirm(`¿Deseas cambiar el estado de atención de ${nombre} a "${nuevoEstado}"?`);
-      if (confirmar) {
-        db.ref("pacientes/" + id).update({ estado: nuevoEstado });
-      }
-    }
-  </script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
