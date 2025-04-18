@@ -1,44 +1,42 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Estado de Pacientes</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .paciente { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-left: 5px solid; }
+    .estado-En\ espera { border-color: red; }
+    .estado-En\ atención { border-color: orange; }
+    .estado-Atendido { border-color: green; }
+    .estado-Programado { border-color: blue; }
+    .estado-btn { margin-left: 10px; padding: 3px 7px; border: none; cursor: pointer; }
+  </style>
 </head>
 <body>
-  <h1>Estado de Pacientes</h1>
-
-  <h2>Lista de Pacientes</h2>
-  <ul id="pacientes"></ul>
-
-  <h3>Agregar Paciente</h3>
-  <form id="formularioPaciente">
-    <label>Nombre:</label>
-    <input type="text" id="nombre" required><br>
-
-    <label>Apellido:</label>
-    <input type="text" id="apellido" required><br>
-
-    <label>Estudio:</label>
+  <h2>Agregar Paciente</h2>
+  <form id="formulario">
+    <input type="text" id="sede" placeholder="Sede" required />
+    <input type="text" id="apellidos" placeholder="Apellidos" required />
+    <input type="text" id="nombres" placeholder="Nombres" required />
     <select id="estudio" required>
-      <option value="">Seleccione un estudio</option>
+      <option value="">Seleccione estudio</option>
       <option value="Abdomen Total">Abdomen Total</option>
-      <option value="Obstétrica">Obstétrica</option>
-      <option value="Transvaginal">Transvaginal</option>
       <option value="Partes Blandas">Partes Blandas</option>
-      <option value="Renal">Renal</option>
-      <option value="Hepatobiliar">Hepatobiliar</option>
+      <option value="Transvaginal">Transvaginal</option>
       <option value="Tiroides">Tiroides</option>
-    </select><br>
-
-    <button type="submit">Agregar Paciente</button>
+    </select>
+    <button type="submit">Agregar</button>
   </form>
 
-  <!-- Firebase SDK -->
+  <h2>Lista de Pacientes</h2>
+  <div id="lista-pacientes"></div>
+
+  <!-- Firebase -->
   <script type="module">
-    // Importación modular
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
@@ -47,7 +45,61 @@
       projectId: "app-ecografia",
       storageBucket: "app-ecografia.appspot.com",
       messagingSenderId: "241799347066",
-      appId: "1:241799347066:web:b10b3c963ec9c88f1d34c3"
+      appId: "1:241799347066:web:b10b3c963ec9c88f1d34c3",
+      measurementId: "G-ZB2XS0DFC8"
     };
 
-    const app = initializeApp
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const pacientesRef = ref(db, 'pacientes');
+
+    const form = document.getElementById('formulario');
+    const lista = document.getElementById('lista-pacientes');
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const nuevoPaciente = {
+        sede: form.sede.value,
+        apellidos: form.apellidos.value,
+        nombres: form.nombres.value,
+        estudio: form.estudio.value,
+        estado: 'En espera',
+        timestamp: Date.now()
+      };
+      push(pacientesRef, nuevoPaciente);
+      form.reset();
+    });
+
+    onValue(pacientesRef, snapshot => {
+      lista.innerHTML = '';
+      const data = snapshot.val();
+      if (!data) {
+        lista.innerHTML = '<p>No hay pacientes.</p>';
+        return;
+      }
+      const pacientesArray = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+      pacientesArray.sort((a, b) => b.timestamp - a.timestamp);
+      pacientesArray.forEach(p => {
+        const div = document.createElement('div');
+        div.className = `paciente estado-${p.estado.replace(/\s/g, '\\ ')}`;
+        div.innerHTML = `
+          <strong>${p.estado}</strong> 
+          <span class="estado-btn" style="background: red" onclick="cambiarEstado('${p.id}', 'En espera')">●</span>
+          <span class="estado-btn" style="background: orange" onclick="cambiarEstado('${p.id}', 'En atención')">●</span>
+          <span class="estado-btn" style="background: green" onclick="cambiarEstado('${p.id}', 'Atendido')">●</span>
+          <span class="estado-btn" style="background: blue" onclick="cambiarEstado('${p.id}', 'Programado')">●</span><br>
+          <strong>${p.nombres} ${p.apellidos}</strong> - ${p.estudio} - <em>${p.sede}</em>
+        `;
+        lista.appendChild(div);
+      });
+    });
+
+    window.cambiarEstado = function (id, nuevoEstado) {
+      const confirmar = confirm(`¿Deseas cambiar el estado del paciente a "${nuevoEstado}"?`);
+      if (!confirmar) return;
+      const pacienteRef = ref(db, `pacientes/${id}`);
+      update(pacienteRef, { estado: nuevoEstado });
+    };
+  </script>
+</body>
+</html>
