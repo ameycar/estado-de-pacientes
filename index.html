@@ -10,8 +10,30 @@
     form { max-width: 400px; margin: auto; padding: 1em; background: #f9f9f9; border-radius: 5px; }
     form input, form button { width: 100%; padding: .5em; margin: .5em 0; }
     ul { list-style: none; padding: 0; max-width: 600px; margin: 1em auto; }
-    ul li { background: #fff; margin: .5em 0; padding: .5em; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; }
-    ul li select { margin-left: 1em; }
+    ul li { 
+      background: #fff; 
+      margin: .5em 0; 
+      padding: .5em; 
+      border-radius: 4px; 
+      display: flex; 
+      align-items: center; 
+    }
+    .btn-estado {
+      border: none;
+      color: white;
+      padding: 0.5em;
+      margin-right: 0.8em;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.9em;
+      min-width: 90px;
+      text-align: center;
+    }
+    .btn-programado { background: #007bff; } /* azul */
+    .btn-espera     { background: #dc3545; } /* rojo */
+    .btn-atencion   { background: #fd7e14; } /* naranja */
+    .btn-atendido   { background: #28a745; } /* verde */
+    li span { flex: 1; }
   </style>
 </head>
 <body>
@@ -40,4 +62,76 @@
       databaseURL: "https://app-ecografia-default-rtdb.firebaseio.com",
       projectId: "app-ecografia",
       storageBucket: "app-ecografia.firebasestorage.app",
-      messaging
+      messagingSenderId: "241799347066",
+      appId: "1:241799347066:web:b10b3c963ec9c88f1d34c3",
+      measurementId: "G-ZB2XS0DFC8"
+    };
+
+    // Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    // Mapa de clases para cada estado
+    const stateClassMap = {
+      Programado: 'btn-programado',
+      'En espera': 'btn-espera',
+      'En atención': 'btn-atencion',
+      Atendido: 'btn-atendido'
+    };
+
+    // Referencias al DOM
+    const form         = document.getElementById('form-paciente');
+    const sedeInput    = document.getElementById('sede');
+    const apellidoInput= document.getElementById('apellido');
+    const nombreInput  = document.getElementById('nombre');
+    const estudioInput = document.getElementById('estudio');
+    const lista        = document.getElementById('pacientes');
+
+    // Añadir paciente con 'En espera' por defecto
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const nuevo = {
+        sede:     sedeInput.value,
+        apellido: apellidoInput.value,
+        nombre:   nombreInput.value,
+        estudio:  estudioInput.value,
+        estado:   'En espera'
+      };
+      push(ref(db, 'pacientes'), nuevo);
+      form.reset();
+    });
+
+    // Mostrar y escuchar en tiempo real
+    onValue(ref(db, 'pacientes'), snapshot => {
+      lista.innerHTML = '';
+      snapshot.forEach(child => {
+        const p = child.val();
+        const li = document.createElement('li');
+
+        // Botón de estado antes del nombre
+        const btn = document.createElement('button');
+        btn.textContent = p.estado;
+        btn.className = `btn-estado ${stateClassMap[p.estado]}`;
+        btn.addEventListener('click', () => {
+          const nombreCompleto = `${p.nombre} ${p.apellido}`;
+          const siguiente = 
+            p.estado === 'Programado' ? 'En espera' :
+            p.estado === 'En espera'  ? 'En atención' :
+            'Atendido';
+          if (confirm(`¿Deseas cambiar el estado de ${nombreCompleto} a "${siguiente}"?`)) {
+            update(ref(db, 'pacientes/' + child.key), { estado: siguiente });
+          }
+        });
+        li.appendChild(btn);
+
+        // Texto con los datos del paciente
+        const span = document.createElement('span');
+        span.textContent = `${p.apellido}, ${p.nombre} — ${p.estudio} (${p.sede})`;
+        li.appendChild(span);
+
+        lista.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>
