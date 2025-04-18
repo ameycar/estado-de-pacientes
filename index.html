@@ -8,7 +8,7 @@
     body { font-family: Arial, sans-serif; margin:20px; }
     h1, h2 { text-align: center; }
     form { max-width: 400px; margin: auto; padding: 1em; background: #f9f9f9; border-radius: 5px; }
-    form input, form button { width: 100%; padding: .5em; margin: .5em 0; }
+    form input, form select, form button { width: 100%; padding: .5em; margin: .5em 0; }
     ul { list-style: none; padding: 0; max-width: 600px; margin: 1em auto; }
     ul li { 
       background: #fff; 
@@ -44,7 +44,14 @@
     <input id="sede"      placeholder="Sede"      required />
     <input id="apellido"  placeholder="Apellido"  required />
     <input id="nombre"    placeholder="Nombre"    required />
-    <input id="estudio"   placeholder="Estudio"   required />
+    <select id="estudio" required>
+      <option value="" disabled selected>Selecciona un estudio</option>
+      <option value="Ecografía abdominal">Ecografía abdominal</option>
+      <option value="Ecografía Doppler">Ecografía Doppler</option>
+      <option value="Ecografía ginecológica">Ecografía ginecológica</option>
+      <option value="Ecografía obstétrica">Ecografía obstétrica</option>
+      <option value="Ecografía transvaginal">Ecografía transvaginal</option>
+    </select>
     <button type="submit">Agregar Paciente</button>
   </form>
 
