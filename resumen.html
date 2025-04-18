@@ -7,52 +7,43 @@
   <style>
     body {
       font-family: Arial, sans-serif;
+      background: #f5f5f5;
       padding: 20px;
-      background: #f1f1f1;
     }
     h1 {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
-    .paciente {
-      background: white;
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      position: relative;
-      overflow: hidden;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
     }
-    .barra-estado {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 8px;
-      height: 100%;
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
     }
-    .estado-programado { background: #007bff; }
-    .estado-espera { background: #dc3545; }
-    .estado-en-atencion { background: #fd7e14; }
-    .estado-atendido { background: #28a745; }
-
-    .info {
-      margin-left: 15px;
-    }
-
-    .paciente strong {
-      display: block;
-      font-size: 18px;
-      margin-bottom: 5px;
-    }
-
-    .paciente small {
-      color: #666;
+    th {
+      background-color: #f0f0f0;
     }
   </style>
 </head>
 <body>
   <h1>Resumen de Pacientes</h1>
-  <div id="lista-pacientes"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Apellidos</th>
+        <th>Nombres</th>
+        <th>Sede</th>
+        <th>Estudio</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody id="lista-pacientes"></tbody>
+  </table>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
@@ -79,32 +70,20 @@
       const data = snapshot.val();
       listaPacientes.innerHTML = "";
       if (data) {
-        const pacientesArray = Object.entries(data);
-        pacientesArray
-          .sort((a, b) => {
-            const estadoOrden = {
-              "En espera": 1,
-              "En atención": 2,
-              "Programado": 3,
-              "Atendido": 4,
-            };
-            return estadoOrden[a[1].estado] - estadoOrden[b[1].estado];
-          })
-          .forEach(([id, paciente]) => {
-            const div = document.createElement("div");
-            div.className = `paciente`;
-            div.innerHTML = `
-              <div class="barra-estado ${getEstadoClase(paciente.estado)}"></div>
-              <div class="info">
-                <strong>${paciente.nombres} ${paciente.apellidos}</strong>
-                <small><b>Sede:</b> ${paciente.sede} | <b>Estudio:</b> ${paciente.estudio}</small>
-              </div>
-            `;
-            listaPacientes.appendChild(div);
-          });
+        const pacientesArray = Object.values(data);
+        pacientesArray.forEach((paciente) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${paciente.apellidos}</td>
+            <td>${paciente.nombres}</td>
+            <td>${paciente.sede}</td>
+            <td>${paciente.estudio}</td>
+            <td>${paciente.estado}</td>
+          `;
+          listaPacientes.appendChild(tr);
+        });
       }
     });
-
-    function getEstadoClase(estado) {
-      switch (estado) {
-        case
+  </script>
+</body>
+</html>
