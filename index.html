@@ -98,6 +98,8 @@
 
     // Obtener los pacientes desde Firebase y mostrarlos
     firebase.database().ref('pacientes').on('value', snapshot => {
+      console.log('Datos obtenidos de Firebase:', snapshot.val()); // Depuración
+
       lista.innerHTML = ''; // Limpiar la lista antes de agregar nuevos datos
       const pacientes = [];
 
@@ -123,3 +125,35 @@
         const li = document.createElement('li');
         const btn = document.createElement('button');
         btn.textContent = p.estado;
+        btn.className = `btn-estado ${stateClassMap[p.estado]}`;
+
+        btn.addEventListener('click', () => {
+          const siguiente =
+            p.estado === 'Programado' ? 'En espera' :
+            p.estado === 'En espera'  ? 'En atención' :
+            'Atendido';
+
+          if (confirm(`¿Deseas cambiar el estado de ${p.nombre} ${p.apellido} a "${siguiente}"?`)) {
+            firebase.database().ref('pacientes/' + p.key).update({ estado: siguiente });
+          }
+        });
+
+        li.appendChild(btn);
+        const span = document.createElement('span');
+        span.textContent = `${p.apellido}, ${p.nombre} — ${p.estudio} (${p.sede})`;
+        li.appendChild(span);
+        lista.appendChild(li);
+      });
+    });
+
+    // Definición del mapa de colores de estado
+    const stateClassMap = {
+      'Programado': 'btn-programado',
+      'En espera': 'btn-en-espera',
+      'En atención': 'btn-en-atencion',
+      'Atendido': 'btn-atendido'
+    };
+  </script>
+
+</body>
+</html>
