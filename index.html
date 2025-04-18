@@ -6,17 +6,34 @@
   <title>Estado de Pacientes</title>
   <style>
     body { font-family: Arial; padding: 20px; }
-    .paciente { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-left: 5px solid; }
-    .estado-En\ espera { border-color: red; }
-    .estado-En\ atención { border-color: orange; }
-    .estado-Atendido { border-color: green; }
-    .estado-Programado { border-color: blue; }
-    .estado-btn { margin-left: 10px; padding: 3px 7px; border: none; cursor: pointer; }
-    .cambiar-estado-btn { padding: 5px 10px; cursor: pointer; }
-    .estado-dropdown { display: none; padding: 5px; background-color: #f9f9f9; border: 1px solid #ccc; position: absolute; margin-top: 5px; }
-    .estado-dropdown button { padding: 5px 10px; cursor: pointer; border: none; }
-    .estado-dropdown button:hover { background-color: #ddd; }
-    .paciente { position: relative; }
+.paciente {
+  margin: 10px 0; padding: 10px; border: 1px solid #ccc;
+  border-left: 5px solid; position: relative;
+}
+.estado-en-espera { border-color: red; }
+.estado-en-atencion { border-color: orange; }
+.estado-atendido { border-color: green; }
+.estado-programado { border-color: blue; }
+
+.cambiar-estado-btn {
+  padding: 5px 10px; cursor: pointer;
+}
+
+.estado-dropdown {
+  display: none; position: absolute; z-index: 10;
+  background-color: white; border: 1px solid #ccc;
+  padding: 5px; margin-top: 5px;
+}
+
+.estado-dropdown button {
+  display: block; width: 100%;
+  padding: 5px 10px; border: none; cursor: pointer;
+  text-align: left;
+}
+.estado-dropdown button:hover {
+  background-color: #f0f0f0;
+}
+
   </style>
 </head>
 <body>
@@ -86,7 +103,9 @@
       pacientesArray.sort((a, b) => b.timestamp - a.timestamp);
       pacientesArray.forEach(p => {
         const div = document.createElement('div');
-        div.className = `paciente estado-${p.estado.replace(/\s/g, '\\ ')}`;
+         const claseEstado = `estado-${p.estado.toLowerCase().replace(/\s/g, '-')}`;
+div.className = `paciente ${claseEstado}`;
+
         div.innerHTML = `
           <strong>${p.estado}</strong> 
           <button class="cambiar-estado-btn" onclick="toggleDropdown('${p.id}')">Cambiar estado</button>
