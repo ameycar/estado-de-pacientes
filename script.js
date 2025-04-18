@@ -48,20 +48,24 @@ form.addEventListener('submit', function (e) {
 // Función para mostrar pacientes
 function mostrarPacientes() {
   const pacientesRef = db.ref('pacientes');
-  pacientesRef.on('child_added', function (snapshot) {
-    const paciente = snapshot.val();
-    const li = document.createElement('li');
-    li.textContent = `${paciente.apellido}, ${paciente.nombre} - ${paciente.estudio} (${paciente.sede}) - Estado: ${paciente.estado}`;
-    
-    // Botón para actualizar estado
-    const button = document.createElement('button');
-    button.textContent = 'Cambiar Estado';
-    button.onclick = function() {
-      actualizarEstado(snapshot.key, paciente.estado);
-    };
+  pacientesRef.on('value', function (snapshot) {
+    pacientesList.innerHTML = ''; // Limpiar la lista actual
 
-    li.appendChild(button);
-    pacientesList.appendChild(li);
+    snapshot.forEach(function (childSnapshot) {
+      const paciente = childSnapshot.val();
+      const li = document.createElement('li');
+      li.textContent = `${paciente.apellido}, ${paciente.nombre} - ${paciente.estudio} (${paciente.sede}) - Estado: ${paciente.estado}`;
+      
+      // Botón para actualizar estado
+      const button = document.createElement('button');
+      button.textContent = 'Cambiar Estado';
+      button.onclick = function() {
+        actualizarEstado(childSnapshot.key, paciente.estado);
+      };
+
+      li.appendChild(button);
+      pacientesList.appendChild(li);
+    });
   });
 }
 
