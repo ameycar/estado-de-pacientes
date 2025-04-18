@@ -101,14 +101,14 @@
         pacientes.push({ ...p, key: child.key });
       });
 
-      // Primero filtramos los que están "En espera" y luego los demás
-      const pacientesEnEspera = pacientes.filter(p => p.estado === 'En espera');
-      const otrosPacientes = pacientes.filter(p => p.estado !== 'En espera');
+      // Ordenamos los pacientes: Primero los que están "En espera", luego los demás
+      const pacientesOrdenados = pacientes.sort((a, b) => {
+        if (a.estado === 'En espera' && b.estado !== 'En espera') return -1;
+        if (a.estado !== 'En espera' && b.estado === 'En espera') return 1;
+        return a.timestamp - b.timestamp; // Orden cronológico por timestamp
+      });
 
-      // Combinamos las listas, primero "En espera" y luego los demás
-      const listaOrdenada = [...pacientesEnEspera, ...otrosPacientes];
-
-      listaOrdenada.forEach(p => {
+      pacientesOrdenados.forEach(p => {
         const li = document.createElement('li');
         const btn = document.createElement('button');
         btn.textContent = p.estado;
@@ -140,3 +140,7 @@
       'En atención': 'btn-en-atencion',
       'Atendido': 'btn-atendido'
     };
+  </script>
+
+</body>
+</html>
