@@ -90,7 +90,8 @@
         apellido: apellidoInput.value,
         nombre:   nombreInput.value,
         estudio:  estudioInput.value,
-        estado:   'En espera'
+        estado:   'En espera',
+        timestamp: Date.now() // Marca de tiempo al agregar el paciente
       };
       push(ref(db, 'pacientes'), nuevo);
       form.reset();
@@ -105,8 +106,8 @@
         pacientes.push({ ...p, key: child.key });
       });
 
-      // Ordenar los pacientes por estado, en espera primero
-      pacientes.sort((a, b) => a.estado === 'En espera' ? -1 : b.estado === 'En espera' ? 1 : 0);
+      // Ordenar los pacientes por fecha de creación (timestamp)
+      pacientes.sort((a, b) => b.timestamp - a.timestamp); // El más reciente va primero
 
       pacientes.forEach(p => {
         const li = document.createElement('li');
