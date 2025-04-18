@@ -12,6 +12,11 @@
     .estado-Atendido { border-color: green; }
     .estado-Programado { border-color: blue; }
     .estado-btn { margin-left: 10px; padding: 3px 7px; border: none; cursor: pointer; }
+    .cambiar-estado-btn { padding: 5px 10px; cursor: pointer; }
+    .estado-dropdown { display: none; padding: 5px; background-color: #f9f9f9; border: 1px solid #ccc; position: absolute; margin-top: 5px; }
+    .estado-dropdown button { padding: 5px 10px; cursor: pointer; border: none; }
+    .estado-dropdown button:hover { background-color: #ddd; }
+    .paciente { position: relative; }
   </style>
 </head>
 <body>
@@ -84,21 +89,31 @@
         div.className = `paciente estado-${p.estado.replace(/\s/g, '\\ ')}`;
         div.innerHTML = `
           <strong>${p.estado}</strong> 
-          <span class="estado-btn" style="background: red" onclick="cambiarEstado('${p.id}', 'En espera')">●</span>
-          <span class="estado-btn" style="background: orange" onclick="cambiarEstado('${p.id}', 'En atención')">●</span>
-          <span class="estado-btn" style="background: green" onclick="cambiarEstado('${p.id}', 'Atendido')">●</span>
-          <span class="estado-btn" style="background: blue" onclick="cambiarEstado('${p.id}', 'Programado')">●</span><br>
-          <strong>${p.nombres} ${p.apellidos}</strong> - ${p.estudio} - <em>${p.sede}</em>
+          <button class="cambiar-estado-btn" onclick="toggleDropdown('${p.id}')">Cambiar estado</button>
+          <div id="dropdown-${p.id}" class="estado-dropdown">
+            <button onclick="cambiarEstado('${p.id}', 'En espera')">En espera (rojo)</button>
+            <button onclick="cambiarEstado('${p.id}', 'En atención')">En atención (naranja)</button>
+            <button onclick="cambiarEstado('${p.id}', 'Atendido')">Atendido (verde)</button>
+            <button onclick="cambiarEstado('${p.id}', 'Programado')">Programado (azul)</button>
+          </div>
+          <br><strong>${p.nombres} ${p.apellidos}</strong> - ${p.estudio} - <em>${p.sede}</em>
         `;
         lista.appendChild(div);
       });
     });
+
+    window.toggleDropdown = function(id) {
+      const dropdown = document.getElementById(`dropdown-${id}`);
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    };
 
     window.cambiarEstado = function (id, nuevoEstado) {
       const confirmar = confirm(`¿Deseas cambiar el estado del paciente a "${nuevoEstado}"?`);
       if (!confirmar) return;
       const pacienteRef = ref(db, `pacientes/${id}`);
       update(pacienteRef, { estado: nuevoEstado });
+      const dropdown = document.getElementById(`dropdown-${id}`);
+      dropdown.style.display = 'none';
     };
   </script>
 </body>
