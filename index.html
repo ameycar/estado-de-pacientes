@@ -1,65 +1,63 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Estado de Pacientes</title>
   <style>
     body { font-family: Arial; padding: 20px; }
-.paciente {
-  margin: 10px 0; padding: 10px; border: 1px solid #ccc;
-  border-left: 5px solid; position: relative;
-}
-.estado-en-espera { border-color: red; }
-.estado-en-atencion { border-color: orange; }
-.estado-atendido { border-color: green; }
-.estado-programado { border-color: blue; }
+    .paciente {
+      margin: 10px 0; padding: 10px; border: 1px solid #ccc;
+      border-left: 5px solid; position: relative;
+    }
+    .estado-en-espera { border-color: red; }
+    .estado-en-atencion { border-color: orange; }
+    .estado-atendido { border-color: green; }
+    .estado-programado { border-color: blue; }
 
-.cambiar-estado-btn {
-  padding: 5px 10px; cursor: pointer;
-}
+    .cambiar-estado-btn {
+      padding: 5px 10px; cursor: pointer; margin-right: 10px;
+    }
 
-.estado-dropdown {
-  display: none; position: absolute; z-index: 10;
-  background-color: white; border: 1px solid #ccc;
-  padding: 5px; margin-top: 5px;
-}
+    .estado-dropdown {
+      display: none; position: absolute; z-index: 10;
+      background-color: white; border: 1px solid #ccc;
+      padding: 5px; margin-top: 5px; left: 0;
+    }
 
-.estado-dropdown button {
-  display: block; width: 100%;
-  padding: 5px 10px; border: none; cursor: pointer;
-  text-align: left;
-}
-.estado-dropdown button:hover {
-  background-color: #f0f0f0;
-}
+    .estado-dropdown button {
+      display: block; width: 100%;
+      padding: 5px 10px; border: none; cursor: pointer;
+      text-align: left;
+    }
 
+    .estado-dropdown button:hover {
+      background-color: #f0f0f0;
+    }
   </style>
 </head>
 <body>
-  <h2>Agregar Paciente</h2>
-  <form id="formulario">
-    <input type="text" id="sede" placeholder="Sede" required />
-    <input type="text" id="apellidos" placeholder="Apellidos" required />
-    <input type="text" id="nombres" placeholder="Nombres" required />
+  <h1>Estado de Pacientes</h1>
+  <form id="form">
+    <input type="text" placeholder="Sede" id="sede" required>
+    <input type="text" placeholder="Apellidos" id="apellidos" required>
+    <input type="text" placeholder="Nombres" id="nombres" required>
     <select id="estudio" required>
-      <option value="">Seleccione estudio</option>
-      <option value="Abdomen Total">Abdomen Total</option>
-      <option value="Partes Blandas">Partes Blandas</option>
-      <option value="Transvaginal">Transvaginal</option>
-      <option value="Tiroides">Tiroides</option>
+      <option value="">Seleccionar Estudio</option>
+      <option>Ecografía abdominal</option>
+      <option>Ecografía pélvica</option>
+      <option>Ecografía obstétrica</option>
+      <option>Ecografía renal</option>
     </select>
-    <button type="submit">Agregar</button>
+    <button type="submit">Agregar Paciente</button>
   </form>
 
   <h2>Lista de Pacientes</h2>
-  <div id="lista-pacientes"></div>
+  <div id="lista"></div>
 
-  <!-- Firebase -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
       authDomain: "app-ecografia.firebaseapp.com",
@@ -71,69 +69,83 @@
       measurementId: "G-ZB2XS0DFC8"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const pacientesRef = ref(db, 'pacientes');
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    const form = document.getElementById('formulario');
-    const lista = document.getElementById('lista-pacientes');
+    const form = document.getElementById("form");
+    const lista = document.getElementById("lista");
 
-    form.addEventListener('submit', e => {
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
+      const sede = form.sede.value;
+      const apellidos = form.apellidos.value;
+      const nombres = form.nombres.value;
+      const estudio = form.estudio.value;
+
       const nuevoPaciente = {
-        sede: form.sede.value,
-        apellidos: form.apellidos.value,
-        nombres: form.nombres.value,
-        estudio: form.estudio.value,
-        estado: 'En espera',
-        timestamp: Date.now()
+        sede,
+        apellidos,
+        nombres,
+        estudio,
+        estado: "En espera",
+        fecha: new Date().toISOString()
       };
-      push(pacientesRef, nuevoPaciente);
+
+      db.ref("pacientes").push(nuevoPaciente);
       form.reset();
     });
 
-    onValue(pacientesRef, snapshot => {
-      lista.innerHTML = '';
-      const data = snapshot.val();
-      if (!data) {
-        lista.innerHTML = '<p>No hay pacientes.</p>';
-        return;
-      }
-      const pacientesArray = Object.entries(data).map(([id, val]) => ({ id, ...val }));
-      pacientesArray.sort((a, b) => b.timestamp - a.timestamp);
-      pacientesArray.forEach(p => {
-        const div = document.createElement('div');
-         const claseEstado = `estado-${p.estado.toLowerCase().replace(/\s/g, '-')}`;
-div.className = `paciente ${claseEstado}`;
+    db.ref("pacientes").on("value", (snapshot) => {
+      lista.innerHTML = "";
+      const pacientes = [];
+      snapshot.forEach(child => {
+        pacientes.push({ id: child.key, ...child.val() });
+      });
 
+      // Ordenar para mostrar primero los "En espera"
+      pacientes.sort((a, b) => {
+        const ordenEstado = {
+          "En espera": 1,
+          "En atención": 2,
+          "Programado": 3,
+          "Atendido": 4
+        };
+        return ordenEstado[a.estado] - ordenEstado[b.estado];
+      });
+
+      pacientes.forEach(p => {
+        const claseEstado = `estado-${p.estado.toLowerCase().replace(/\s/g, '-')}`;
+        const div = document.createElement("div");
+        div.className = `paciente ${claseEstado}`;
         div.innerHTML = `
-          <strong>${p.estado}</strong> 
-          <button class="cambiar-estado-btn" onclick="toggleDropdown('${p.id}')">Cambiar estado</button>
-          <div id="dropdown-${p.id}" class="estado-dropdown">
-            <button onclick="cambiarEstado('${p.id}', 'En espera')">En espera (rojo)</button>
-            <button onclick="cambiarEstado('${p.id}', 'En atención')">En atención (naranja)</button>
-            <button onclick="cambiarEstado('${p.id}', 'Atendido')">Atendido (verde)</button>
-            <button onclick="cambiarEstado('${p.id}', 'Programado')">Programado (azul)</button>
+          <strong>${p.nombres} ${p.apellidos}</strong>
+          <div class="estado-actual">[${p.estado}]</div>
+          <button class="cambiar-estado-btn">Cambiar estado</button>
+          <div class="estado-dropdown">
+            <button onclick="cambiarEstado('${p.id}', 'En espera', '${p.nombres} ${p.apellidos}')">En espera</button>
+            <button onclick="cambiarEstado('${p.id}', 'En atención', '${p.nombres} ${p.apellidos}')">En atención</button>
+            <button onclick="cambiarEstado('${p.id}', 'Programado', '${p.nombres} ${p.apellidos}')">Programado</button>
+            <button onclick="cambiarEstado('${p.id}', 'Atendido', '${p.nombres} ${p.apellidos}')">Atendido</button>
           </div>
-          <br><strong>${p.nombres} ${p.apellidos}</strong> - ${p.estudio} - <em>${p.sede}</em>
+          <div><em>${p.estudio}</em> - <em>${p.sede}</em></div>
         `;
+
+        const btn = div.querySelector(".cambiar-estado-btn");
+        const dropdown = div.querySelector(".estado-dropdown");
+        btn.addEventListener("click", () => {
+          dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        });
+
         lista.appendChild(div);
       });
     });
 
-    window.toggleDropdown = function(id) {
-      const dropdown = document.getElementById(`dropdown-${id}`);
-      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-    };
-
-    window.cambiarEstado = function (id, nuevoEstado) {
-      const confirmar = confirm(`¿Deseas cambiar el estado del paciente a "${nuevoEstado}"?`);
-      if (!confirmar) return;
-      const pacienteRef = ref(db, `pacientes/${id}`);
-      update(pacienteRef, { estado: nuevoEstado });
-      const dropdown = document.getElementById(`dropdown-${id}`);
-      dropdown.style.display = 'none';
-    };
+    function cambiarEstado(id, nuevoEstado, nombre) {
+      const confirmar = confirm(`¿Deseas cambiar el estado de atención de ${nombre} a "${nuevoEstado}"?`);
+      if (confirmar) {
+        db.ref("pacientes/" + id).update({ estado: nuevoEstado });
+      }
+    }
   </script>
 </body>
 </html>
