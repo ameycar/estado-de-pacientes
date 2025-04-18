@@ -55,7 +55,6 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
     import { getDatabase, ref, onValue, push, update } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
 
-    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
       authDomain: "app-ecografia.firebaseapp.com",
@@ -67,11 +66,9 @@
       measurementId: "G-ZB2XS0DFC8"
     };
 
-    // Inicializar Firebase
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
 
-    // Mapa de clases para cada estado
     const stateClassMap = {
       Programado: 'btn-programado',
       'En espera': 'btn-espera',
@@ -79,7 +76,6 @@
       Atendido: 'btn-atendido'
     };
 
-    // Referencias al DOM
     const form         = document.getElementById('form-paciente');
     const sedeInput    = document.getElementById('sede');
     const apellidoInput= document.getElementById('apellido');
@@ -87,7 +83,6 @@
     const estudioInput = document.getElementById('estudio');
     const lista        = document.getElementById('pacientes');
 
-    // Añadir paciente con 'En espera' por defecto
     form.addEventListener('submit', e => {
       e.preventDefault();
       const nuevo = {
@@ -101,14 +96,20 @@
       form.reset();
     });
 
-    // Mostrar y escuchar en tiempo real
     onValue(ref(db, 'pacientes'), snapshot => {
       lista.innerHTML = '';
+      const pacientes = [];
+
       snapshot.forEach(child => {
         const p = child.val();
-        const li = document.createElement('li');
+        pacientes.push({ ...p, key: child.key });
+      });
 
-        // Botón de estado antes del nombre
+      // Ordenar los pacientes por estado, en espera primero
+      pacientes.sort((a, b) => a.estado === 'En espera' ? -1 : b.estado === 'En espera' ? 1 : 0);
+
+      pacientes.forEach(p => {
+        const li = document.createElement('li');
         const btn = document.createElement('button');
         btn.textContent = p.estado;
         btn.className = `btn-estado ${stateClassMap[p.estado]}`;
@@ -119,16 +120,13 @@
             p.estado === 'En espera'  ? 'En atención' :
             'Atendido';
           if (confirm(`¿Deseas cambiar el estado de ${nombreCompleto} a "${siguiente}"?`)) {
-            update(ref(db, 'pacientes/' + child.key), { estado: siguiente });
+            update(ref(db, 'pacientes/' + p.key), { estado: siguiente });
           }
         });
         li.appendChild(btn);
-
-        // Texto con los datos del paciente
         const span = document.createElement('span');
         span.textContent = `${p.apellido}, ${p.nombre} — ${p.estudio} (${p.sede})`;
         li.appendChild(span);
-
         lista.appendChild(li);
       });
     });
