@@ -1,12 +1,13 @@
-// Tu configuración personalizada de Firebase
+// Tu configuración de Firebase
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  databaseURL: "TU_DATABASE_URL",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_STORAGE_BUCKET",
-  messagingSenderId: "TU_MESSAGING_SENDER_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
+  authDomain: "app-ecografia.firebaseapp.com",
+  databaseURL: "https://app-ecografia-default-rtdb.firebaseio.com",
+  projectId: "app-ecografia",
+  storageBucket: "app-ecografia.appspot.com",
+  messagingSenderId: "241799347066",
+  appId: "1:241799347066:web:b10b3c963ec9c88f1d34c3",
+  measurementId: "G-ZB2XS0DFC8"
 };
 
 // Inicializar Firebase
@@ -35,8 +36,6 @@ document.getElementById("form-paciente").addEventListener("submit", function (e)
     };
 
     pacientesRef.push(nuevoPaciente);
-
-    // Limpiar formulario
     this.reset();
   }
 });
@@ -53,19 +52,18 @@ pacientesRef.on("value", (snapshot) => {
   });
 
   // Ordenar: primero los "En espera"
+  const ordenEstados = ["En espera", "Programado", "En atención", "Atendido"];
   data.sort((a, b) => {
-    const orden = ["En espera", "Programado", "En atención", "Atendido"];
-    return orden.indexOf(a.estado) - orden.indexOf(b.estado);
+    return ordenEstados.indexOf(a.estado) - ordenEstados.indexOf(b.estado);
   });
 
-  data.reverse(); // Mostrar el más reciente primero
+  data.reverse(); // Mostrar los más recientes primero
 
   data.forEach((paciente) => {
     const fila = document.createElement("tr");
+    fila.id = `fila-${paciente.key}`;
     fila.innerHTML = `
-      <td>
-        ${getBotonEstado(paciente.estado)}
-      </td>
+      <td>${getBotonEstado(paciente.estado)}</td>
       <td>${paciente.apellidos}</td>
       <td>${paciente.nombres}</td>
       <td>${paciente.estudio}</td>
@@ -81,16 +79,14 @@ pacientesRef.on("value", (snapshot) => {
         </select>
       </td>
     `;
-
     tabla.appendChild(fila);
-
     if (paciente.estado === "En espera") contadorEspera++;
   });
 
   document.getElementById("contador-espera").textContent = contadorEspera;
 });
 
-// Botón de color según estado
+// Botón visual del estado
 function getBotonEstado(estado) {
   let color = "";
   switch (estado) {
@@ -106,14 +102,16 @@ function getBotonEstado(estado) {
     case "Atendido":
       color = "success";
       break;
+    default:
+      color = "secondary";
   }
   return `<button class="btn btn-sm btn-${color}" disabled>${estado}</button>`;
 }
 
-// Confirmar cambio de estado
+// Confirmar antes de cambiar estado
 function confirmarCambio(id, nuevoEstado) {
   const fila = document.getElementById(`fila-${id}`);
-  const nombre = fila ? fila.querySelector("td:nth-child(3)").textContent : "¿Seguro?";
+  const nombre = fila ? fila.querySelector("td:nth-child(3)").textContent : "este paciente";
 
   if (confirm(`¿Deseas cambiar el estado de atención del paciente ${nombre}?`)) {
     pacientesRef.child(id).update({ estado: nuevoEstado });
