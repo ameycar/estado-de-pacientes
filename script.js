@@ -1,7 +1,4 @@
-// Configuración de Firebase
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
-
+// Configuración Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
   authDomain: "app-ecografia.firebaseapp.com",
@@ -13,67 +10,63 @@ const firebaseConfig = {
   measurementId: "G-ZB2XS0DFC8"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const pacientesRef = ref(db, "pacientes");
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-// Agregar paciente
-document.getElementById("pacienteForm").addEventListener("submit", function(e) {
+const form = document.getElementById("formPaciente");
+const lista = document.getElementById("listaPacientes");
+const contadorEspera = document.getElementById("contadorEspera");
+
+document.getElementById("fechaActual").innerText = new Date().toLocaleDateString();
+
+form.addEventListener("submit", function (e) {
   e.preventDefault();
+  const sede = form.sede.value.trim();
+  const apellidos = form.apellidos.value.trim();
+  const nombres = form.nombres.value.trim();
+  const estudio = form.estudio.value;
 
-  const sede = document.getElementById("sede").value.trim();
-  const apellidos = document.getElementById("apellidos").value.trim();
-  const nombres = document.getElementById("nombres").value.trim();
-  const estudio = document.getElementById("estudio").value;
+  if (sede && apellidos && nombres && estudio) {
+    const nuevoPaciente = {
+      sede,
+      apellidos,
+      nombres,
+      estudio,
+      estado: "en_espera",
+      fecha: new Date().toISOString()
+    };
 
-  if (!sede || !apellidos || !nombres || !estudio) return;
-
-  const nuevoPaciente = {
-    sede,
-    apellidos,
-    nombres,
-    estudio,
-    estado: "En espera",
-    fecha: new Date().toLocaleDateString("es-PE")
-  };
-
-  push(pacientesRef, nuevoPaciente);
-  document.getElementById("pacienteForm").reset();
+    db.ref("pacientes").push(nuevoPaciente, (error) => {
+      if (!error) form.reset();
+    });
+  }
 });
 
-// Mostrar lista de pacientes
-onValue(pacientesRef, (snapshot) => {
-  const lista = document.getElementById("listaPacientes");
-  lista.innerHTML = "";
-
-  let contadorEspera = 0;
-
-  const pacientes = [];
-  snapshot.forEach(child => {
-    pacientes.push({ id: child.key, ...child.val() });
+function mostrarPacientes() {
+  db.ref("pacientes").on("value", (snapshot) => {
+    lista.innerHTML = "";
+    let enEspera = 0;
+    const data = snapshot.val();
+    if (data) {
+      const pacientesArray = Object.entries(data).reverse();
+      pacientesArray.forEach(([id, paciente]) => {
+        if (paciente.estado === "en_espera") enEspera++;
+        const card = document.createElement("div");
+        const estadoClase = `estado-${paciente.estado}`;
+        card.className = `card ${estadoClase}`;
+        card.innerHTML = `
+          <div class="card-body">
+            <h6 class="card-title mb-1">${paciente.nombres} ${paciente.apellidos}</h6>
+            <p class="card-text mb-1"><strong>Sede:</strong> ${paciente.sede}</p>
+            <p class="card-text mb-1"><strong>Estudio:</strong> ${paciente.estudio}</p>
+            <p class="card-text"><strong>Estado:</strong> ${paciente.estado.replace("_", " ")}</p>
+          </div>
+        `;
+        lista.appendChild(card);
+      });
+    }
+    contadorEspera.textContent = enEspera;
   });
+}
 
-  pacientes.reverse(); // Mostrar los últimos primero
-
-  pacientes.forEach(p => {
-    if (p.estado === "En espera") contadorEspera++;
-
-    const estadoClass = {
-      "Programado": "estado-programado",
-      "En espera": "estado-espera",
-      "En atención": "estado-en-atencion",
-      "Atendido": "estado-atendido"
-    }[p.estado] || "";
-
-    const div = document.createElement("div");
-    div.className = `card p-3 ${estadoClass}`;
-    div.innerHTML = `
-      <h5>${p.nombres} ${p.apellidos}</h5>
-      <p><strong>Sede:</strong> ${p.sede} | <strong>Estudio:</strong> ${p.estudio} | <strong>Fecha:</strong> ${p.fecha}</p>
-      <p><strong>Estado:</strong> ${p.estado}</p>
-    `;
-    lista.appendChild(div);
-  });
-
-  document.getElementById("contadorEspera").textContent = contadorEspera;
-});
+mostrarPacientes();
