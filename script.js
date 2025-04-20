@@ -12,6 +12,8 @@ const firebaseConfig = {
 
 // Inicializa Firebase
 firebase.initializeApp(firebaseConfig);
+console.log("Firebase inicializado correctamente");
+
 const db = firebase.database();
 
 // Elementos del DOM
