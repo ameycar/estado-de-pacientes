@@ -10,15 +10,19 @@ const firebaseConfig = {
   measurementId: "G-ZB2XS0DFC8"
 };
 
+// Inicializa Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// Elementos del DOM
 const form = document.getElementById("formPaciente");
 const lista = document.getElementById("listaPacientes");
 const contadorEspera = document.getElementById("contadorEspera");
 
+// Fecha actual
 document.getElementById("fechaActual").innerText = new Date().toLocaleDateString();
 
+// Agregar paciente a Firebase
 form.addEventListener("submit", function (e) {
   e.preventDefault();
   const sede = form.sede.value.trim();
@@ -42,6 +46,7 @@ form.addEventListener("submit", function (e) {
   }
 });
 
+// Mostrar pacientes en tiempo real
 function mostrarPacientes() {
   db.ref("pacientes").on("value", (snapshot) => {
     lista.innerHTML = "";
@@ -53,13 +58,13 @@ function mostrarPacientes() {
         if (paciente.estado === "en_espera") enEspera++;
         const card = document.createElement("div");
         const estadoClase = `estado-${paciente.estado}`;
-        card.className = `card ${estadoClase}`;
+        card.className = `card p-3 ${estadoClase}`;
         card.innerHTML = `
-          <div class="card-body">
-            <h6 class="card-title mb-1">${paciente.nombres} ${paciente.apellidos}</h6>
-            <p class="card-text mb-1"><strong>Sede:</strong> ${paciente.sede}</p>
-            <p class="card-text mb-1"><strong>Estudio:</strong> ${paciente.estudio}</p>
-            <p class="card-text"><strong>Estado:</strong> ${paciente.estado.replace("_", " ")}</p>
+          <div>
+            <h6 class="mb-1">${paciente.nombres} ${paciente.apellidos}</h6>
+            <p class="mb-1"><strong>Sede:</strong> ${paciente.sede}</p>
+            <p class="mb-1"><strong>Estudio:</strong> ${paciente.estudio}</p>
+            <p><strong>Estado:</strong> ${paciente.estado.replace("_", " ")}</p>
           </div>
         `;
         lista.appendChild(card);
@@ -69,4 +74,5 @@ function mostrarPacientes() {
   });
 }
 
+// Llama a la función para mostrar pacientes
 mostrarPacientes();
