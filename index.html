@@ -62,20 +62,21 @@
       measurementId: "G-ZB2XS0DFC8"
     };
 
+    // Inicialización de Firebase
     const app = firebase.initializeApp(firebaseConfig);
-    console.log("Conectado a Firebase"); // Verificación de conexión a Firebase
     const db = firebase.database();
 
+    // Elementos del DOM
     const form = document.getElementById("formPaciente");
     const lista = document.getElementById("listaPacientes");
     const contadorEspera = document.getElementById("contadorEspera");
 
+    // Mostrar la fecha actual
     document.getElementById("fechaActual").innerText = new Date().toLocaleDateString();
 
+    // Agregar paciente a Firebase
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      console.log("Formulario enviado");
-
       const sede = form.sede.value.trim();
       const apellidos = form.apellidos.value.trim();
       const nombres = form.nombres.value.trim();
@@ -91,23 +92,20 @@
           fecha: new Date().toISOString()
         };
 
-        // Intentar agregar el paciente a Firebase
-        db.ref("pacientes").push(nuevoPaciente)
-          .then(() => {
-            console.log("Paciente agregado correctamente");
-            form.reset(); // Limpiar el formulario
-          })
-          .catch((error) => {
-            console.error("Error al agregar paciente:", error);
-          });
-      } else {
-        console.log("Por favor completa todos los campos.");
+        db.ref("pacientes").push(nuevoPaciente, (error) => {
+          if (!error) {
+            form.reset(); // Limpiar el formulario después de agregar
+            console.log("Paciente agregado correctamente"); // Verificación
+          }
+        });
       }
     });
 
+    // Función para mostrar pacientes en tiempo real
     function mostrarPacientes() {
       db.ref("pacientes").on("value", (snapshot) => {
-        lista.innerHTML = "";
+        console.log("Datos de Firebase:", snapshot.val()); // Verificación
+        lista.innerHTML = ""; // Limpiar la lista
         let enEspera = 0;
         const data = snapshot.val();
         if (data) {
@@ -116,7 +114,7 @@
             if (paciente.estado === "en_espera") enEspera++;
             const card = document.createElement("div");
             const estadoClase = `estado-${paciente.estado}`;
-            card.className = `card ${estadoClase}`;
+            card.className = `card p-3 ${estadoClase}`;
             card.innerHTML = `
               <div class="card-body">
                 <h6 class="card-title mb-1">${paciente.nombres} ${paciente.apellidos}</h6>
@@ -128,12 +126,12 @@
             lista.appendChild(card);
           });
         }
-        contadorEspera.textContent = enEspera;
+        contadorEspera.textContent = enEspera; // Actualizar contador de espera
       });
     }
 
-    mostrarPacientes(); // Mostrar pacientes desde Firebase
-
+    // Llamada inicial para mostrar los pacientes al cargar la página
+    mostrarPacientes();
   </script>
 </body>
 </html>
