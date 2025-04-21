@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Estado de Pacientes</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <style>
     body {
       background: #f0f2f5;
@@ -14,11 +14,12 @@
     }
     .card {
       margin-bottom: 10px;
+      border-left: 6px solid transparent;
     }
-    .estado-programado { border-left: 6px solid #0d6efd; }
-    .estado-en_espera { border-left: 6px solid #dc3545; }
-    .estado-en_atencion { border-left: 6px solid #fd7e14; }
-    .estado-atendido { border-left: 6px solid #198754; }
+    .estado-programado { border-color: #0d6efd; }
+    .estado-en_espera { border-color: #dc3545; }
+    .estado-en_atencion { border-color: #fd7e14; }
+    .estado-atendido { border-color: #198754; }
   </style>
 </head>
 <body>
@@ -31,9 +32,9 @@
     </div>
 
     <form id="formPaciente" class="mb-4">
-      <input type="text" class="form-control mb-2" id="sede" placeholder="Sede" required>
-      <input type="text" class="form-control mb-2" id="apellidos" placeholder="Apellidos" required>
-      <input type="text" class="form-control mb-2" id="nombres" placeholder="Nombres" required>
+      <input type="text" class="form-control mb-2" id="sede" placeholder="Sede" required />
+      <input type="text" class="form-control mb-2" id="apellidos" placeholder="Apellidos" required />
+      <input type="text" class="form-control mb-2" id="nombres" placeholder="Nombres" required />
       <select class="form-select mb-2" id="estudio" required>
         <option value="">Seleccione Estudio</option>
         <option value="Abdominal">Abdominal</option>
@@ -41,15 +42,18 @@
         <option value="Obstétrico">Obstétrico</option>
         <option value="Renal">Renal</option>
       </select>
-      <button class="btn btn-primary w-100">Agregar Paciente</button>
+      <button type="submit" class="btn btn-primary w-100">Agregar Paciente</button>
     </form>
 
     <h5 class="mb-3">Lista de Pacientes</h5>
     <div id="listaPacientes"></div>
   </div>
 
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+
+  <!-- Script -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyA1LYlm8HRhW1MPCxsgrQtiFO5rvS0v2_s",
@@ -62,21 +66,18 @@
       measurementId: "G-ZB2XS0DFC8"
     };
 
-    // Inicialización de Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Elementos del DOM
     const form = document.getElementById("formPaciente");
     const lista = document.getElementById("listaPacientes");
     const contadorEspera = document.getElementById("contadorEspera");
 
-    // Mostrar la fecha actual
     document.getElementById("fechaActual").innerText = new Date().toLocaleDateString();
 
-    // Agregar paciente a Firebase
     form.addEventListener("submit", function (e) {
       e.preventDefault();
+
       const sede = form.sede.value.trim();
       const apellidos = form.apellidos.value.trim();
       const nombres = form.nombres.value.trim();
@@ -94,43 +95,43 @@
 
         db.ref("pacientes").push(nuevoPaciente, (error) => {
           if (!error) {
-            form.reset(); // Limpiar el formulario después de agregar
-            console.log("Paciente agregado correctamente"); // Verificación
+            form.reset();
+          } else {
+            alert("Error al guardar en Firebase");
           }
         });
       }
     });
 
-    // Función para mostrar pacientes en tiempo real
     function mostrarPacientes() {
       db.ref("pacientes").on("value", (snapshot) => {
-        console.log("Datos de Firebase:", snapshot.val()); // Verificación
-        lista.innerHTML = ""; // Limpiar la lista
+        lista.innerHTML = "";
         let enEspera = 0;
         const data = snapshot.val();
         if (data) {
           const pacientesArray = Object.entries(data).reverse();
           pacientesArray.forEach(([id, paciente]) => {
             if (paciente.estado === "en_espera") enEspera++;
+
             const card = document.createElement("div");
             const estadoClase = `estado-${paciente.estado}`;
-            card.className = `card p-3 ${estadoClase}`;
+            card.className = `card ${estadoClase}`;
             card.innerHTML = `
               <div class="card-body">
                 <h6 class="card-title mb-1">${paciente.nombres} ${paciente.apellidos}</h6>
                 <p class="card-text mb-1"><strong>Sede:</strong> ${paciente.sede}</p>
                 <p class="card-text mb-1"><strong>Estudio:</strong> ${paciente.estudio}</p>
+                <p class="card-text mb-1"><strong>Fecha:</strong> ${new Date(paciente.fecha).toLocaleDateString()}</p>
                 <p class="card-text"><strong>Estado:</strong> ${paciente.estado.replace("_", " ")}</p>
               </div>
             `;
             lista.appendChild(card);
           });
         }
-        contadorEspera.textContent = enEspera; // Actualizar contador de espera
+        contadorEspera.textContent = enEspera;
       });
     }
 
-    // Llamada inicial para mostrar los pacientes al cargar la página
     mostrarPacientes();
   </script>
 </body>
