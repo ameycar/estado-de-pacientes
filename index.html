@@ -62,20 +62,20 @@
       measurementId: "G-ZB2XS0DFC8"
     };
 
-    // Inicializa Firebase
     const app = firebase.initializeApp(firebaseConfig);
+    console.log("Conectado a Firebase"); // Verificación de la conexión con Firebase
     const db = firebase.database();
 
     const form = document.getElementById("formPaciente");
     const lista = document.getElementById("listaPacientes");
     const contadorEspera = document.getElementById("contadorEspera");
 
-    // Muestra la fecha actual
     document.getElementById("fechaActual").innerText = new Date().toLocaleDateString();
 
-    // Agregar paciente a Firebase
     form.addEventListener("submit", function (e) {
       e.preventDefault();
+      console.log("Formulario enviado"); // Verificación de que el formulario fue enviado
+
       const sede = form.sede.value.trim();
       const apellidos = form.apellidos.value.trim();
       const nombres = form.nombres.value.trim();
@@ -93,16 +93,15 @@
 
         db.ref("pacientes").push(nuevoPaciente, (error) => {
           if (!error) {
+            console.log("Paciente agregado correctamente"); // Verificación de que el paciente fue agregado
             form.reset();
-            alert("Paciente agregado correctamente.");
           } else {
-            alert("Error al agregar el paciente.");
+            console.log("Error al agregar paciente:", error); // En caso de error
           }
         });
       }
     });
 
-    // Mostrar pacientes en tiempo real
     function mostrarPacientes() {
       db.ref("pacientes").on("value", (snapshot) => {
         lista.innerHTML = "";
@@ -114,13 +113,13 @@
             if (paciente.estado === "en_espera") enEspera++;
             const card = document.createElement("div");
             const estadoClase = `estado-${paciente.estado}`;
-            card.className = `card p-3 ${estadoClase}`;
+            card.className = `card ${estadoClase}`;
             card.innerHTML = `
-              <div>
-                <h6 class="mb-1">${paciente.nombres} ${paciente.apellidos}</h6>
-                <p class="mb-1"><strong>Sede:</strong> ${paciente.sede}</p>
-                <p class="mb-1"><strong>Estudio:</strong> ${paciente.estudio}</p>
-                <p><strong>Estado:</strong> ${paciente.estado.replace("_", " ")}</p>
+              <div class="card-body">
+                <h6 class="card-title mb-1">${paciente.nombres} ${paciente.apellidos}</h6>
+                <p class="card-text mb-1"><strong>Sede:</strong> ${paciente.sede}</p>
+                <p class="card-text mb-1"><strong>Estudio:</strong> ${paciente.estudio}</p>
+                <p class="card-text"><strong>Estado:</strong> ${paciente.estado.replace("_", " ")}</p>
               </div>
             `;
             lista.appendChild(card);
@@ -130,7 +129,6 @@
       });
     }
 
-    // Inicializa la función para mostrar pacientes
     mostrarPacientes();
   </script>
 </body>
