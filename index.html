@@ -62,6 +62,7 @@
       measurementId: "G-ZB2XS0DFC8"
     };
 
+    // Inicializa Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -69,8 +70,10 @@
     const lista = document.getElementById("listaPacientes");
     const contadorEspera = document.getElementById("contadorEspera");
 
+    // Fecha actual
     document.getElementById("fechaActual").innerText = new Date().toLocaleDateString();
 
+    // Agregar paciente a Firebase
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       const sede = form.sede.value.trim();
@@ -88,40 +91,6 @@
           fecha: new Date().toISOString()
         };
 
+        // Agregar paciente a Firebase
         db.ref("pacientes").push(nuevoPaciente, (error) => {
-          if (!error) form.reset();
-        });
-      }
-    });
-
-    function mostrarPacientes() {
-      db.ref("pacientes").on("value", (snapshot) => {
-        lista.innerHTML = "";
-        let enEspera = 0;
-        const data = snapshot.val();
-        if (data) {
-          const pacientesArray = Object.entries(data).reverse();
-          pacientesArray.forEach(([id, paciente]) => {
-            if (paciente.estado === "en_espera") enEspera++;
-            const card = document.createElement("div");
-            const estadoClase = `estado-${paciente.estado}`;
-            card.className = `card ${estadoClase}`;
-            card.innerHTML = `
-              <div class="card-body">
-                <h6 class="card-title mb-1">${paciente.nombres} ${paciente.apellidos}</h6>
-                <p class="card-text mb-1"><strong>Sede:</strong> ${paciente.sede}</p>
-                <p class="card-text mb-1"><strong>Estudio:</strong> ${paciente.estudio}</p>
-                <p class="card-text"><strong>Estado:</strong> ${paciente.estado.replace("_", " ")}</p>
-              </div>
-            `;
-            lista.appendChild(card);
-          });
-        }
-        contadorEspera.textContent = enEspera;
-      });
-    }
-
-    mostrarPacientes();
-  </script>
-</body>
-</html>
+          if
